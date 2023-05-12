@@ -1,0 +1,5 @@
+create table priya.SIP_orders_aggregated as  
+with raw_data1 as 
+(SELECT count(id) as SIP_orders, cast(created_ts as date) dt, status, payment_status, sip_type ,platform,payment_mode FROM dbo_wms_s3.sips where (exchange_sip_id <> '') and exchange_sip_id is not null and dt>='2022-04-01' group by 2,3,4,5,6,7)
+
+select * from raw_data1
