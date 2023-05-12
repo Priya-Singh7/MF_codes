@@ -1,0 +1,53 @@
+create table priya.MF_categories_wise_Funnel as
+with MF_Cateogory as 
+(
+select  distinct client_id,event_metadata,client_timestamp,date_trunc('month',CAST(dt as date)) as Mt ,case when event_metadata like '%Type%' then  replace(replace(SPLIT_PART(event_metadata, ':', 2),'"',''),'}','')
+    end as Category from  clickstream.db_dbo_clickstream_data_tablename_mf_clickstream_data where  event_id in ('308.0.0.1.2')  and dt >='2023-01-01'), 
+
+Client_timestamp_sort as 
+(select * from (select rank() over (partition by client_id order by client_timestamp desc) as rank ,* from MF_Cateogory) where rank =1 ),
+
+Explore_fund as 
+(
+select * from clickstream.db_dbo_clickstream_data_tablename_mf_clickstream_data where event_id in ('308.0.0.2.4') and dt >='2023-01-01'),
+Explore_fund_highreturn as 
+(
+select a.Category,a.client_id,a.Mt,b.client_id as explore_Clients,b.event_metadata as funds_name from Client_timestamp_sort a  left join Explore_fund b
+on a.client_id=b.client_id),
+
+
+start_SIP as 
+(
+select * from clickstream.db_dbo_clickstream_data_tablename_mf_clickstream_data where event_id in ('310.0.0.1.5') and dt >='2023-01-01'),
+final as 
+(
+select a.client_id,a.explore_Clients,a.Mt,a.Category,b.Client_id as SIP_Clients from Explore_fund_highreturn a 
+left join start_SIP b
+on a.explore_Clients=b.client_id)
+
+select
+  Mt,
+  'Step1' as steps,
+  'MF_users_click' as step_name,
+  Category,
+  count(distinct client_id) as Clients
+   from final
+  group by 1,2,3,4
+  union all 
+  select
+  Mt,
+  'Step2' as steps,
+  'MF_users_explore_clients' as step_name,
+  Category,
+  count(distinct explore_Clients) as Clients
+   from final
+   group by 1,2,3,4
+   union all
+    select
+  Mt,
+  'Step3' as steps,
+  'MF_users_SIP_Clients' as step_name,
+  Category,
+  count(distinct SIP_Clients) as Clients
+   from final
+   group by 1,2,3,4
