@@ -1,0 +1,5 @@
+create table priya.ALL_MF_orders as 
+
+select count(id) as orders,created_ts::timestamp::date as dt ,investment_type,payment_mode,payemt_status,amount,asfirst_order,order_source,transaction_type from dbo_wms_s3.orders where
+    investment_type='LUMPSUM' and exchange_order_id is not null and exchange_order_id<>'' and created_ts::timestamp::date >='2022-04-01'
+    group by 2,3,4,5,6,7,8,9
