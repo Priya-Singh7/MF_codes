@@ -1,0 +1,4 @@
+delete from
+  priya.MF_Master
+where
+  cast(dt as date) >= date_add('day', -60, current_date);
