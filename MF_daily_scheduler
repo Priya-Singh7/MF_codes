@@ -1,0 +1,124 @@
+--create table priya.MF_Master as
+with raw_data1 as 
+(
+select distinct client_id as spark_users,'Spark_Android' as platform,dt from clickstream.db_dbo_clickstream_data_tablename_dp_spark_clickstream_data where 
+cast(dt as date) >= date_add('day', -60, current_date)
+union all
+select distinct client_id as spark_users,'Spark_iOS' as platform,dt from clickstream.db_dbo_clickstream_data_tablename_spark_ios_clickstream_data where cast(dt as date) >= date_add('day', -60, current_date)),
+Mf_table as
+(select * from  clickstream.db_dbo_clickstream_data_tablename_mf_clickstream_data where cast(dt as date) >= date_add('day', -60, current_date) and event_id in ('308.0.0.1.0')),
+join_mf_spark as 
+(select a.dt,a.spark_users,a.platform,b.client_id as MF_users,b.dt as Mf_date from raw_data1 a left join Mf_table b
+on a.spark_users=b.client_id
+and a.dt=b.dt),
+
+sn_clientkyc_data as 
+(
+select * from db_online_engine_rev.sn_clientkyc where cast(activefrom as date) >= date_add('day', -60, current_date)
+),
+mf_spark_b2b_b2c as
+(select a.*,b.b2c from join_mf_spark a left join 
+sn_clientkyc_data b on a.spark_users =b.party_code),
+
+client_invested as 
+(SELECT distinct client_code as client_id,id as orders,dt as Sip_date, cast(updated_ts as date) updated_date, cast(created_ts as date) dt, status,platform, payment_status, first_order,sip_type, '2.0' version FROM dbo_wms_s3.sips where id>0 and (exchange_sip_id <> '' and exchange_sip_id is not null and cast(created_ts as date) >= date_add('day', -60, current_date) and status not in ('SIP_REJECTED','SIP_FAILED'))),
+
+raw_data2 as 
+(
+select a.*,b.activefrom,b.b2c from client_invested a
+left join sn_clientkyc_data b 
+on a.client_id =b.party_code),
+raw_data3 as 
+(
+select *,case when datediff(day,cast(activefrom as date), current_date) <=30 then 'New Users' else 'Old Users' end new_old_users from raw_data2),
+lump_sum as 
+(
+ select * from dbo_wms_s3.orders where
+    investment_type='LUMPSUM' and exchange_order_id is not null and exchange_order_id<>'' and status <> 'ORDER_REJECTED'
+    and id >0 and cast(created_ts as date) >= date_add('day', -60, current_date)),
+lump_sum_b2b_b2c as 
+(select a.*,b.b2c from lump_sum a left join sn_clientkyc_data b 
+on a.client_code =b.party_code)
+select
+  dt::timestamp::date,
+  'Step1' as steps,
+  'Spark_Users' as step_name,
+  b2c,
+  platform,
+  count(distinct spark_users)
+  from mf_spark_b2b_b2c
+group by 1,2,3,4,5
+union all
+select
+  dt::timestamp::date,
+  'Step2' as steps,
+  'MF_users' as step_name,
+  b2c,
+  platform,
+  count(distinct MF_users)
+   from mf_spark_b2b_b2c
+  group by 1,2,3,4,5
+  union all
+  select
+  dt::timestamp::date,
+  'Step3' as steps,
+  'MF_users_invested' as step_name,
+  b2c,
+  platform,
+  count(distinct client_id)
+   from raw_data3
+  group by 1,2,3,4,5
+  union all
+  select
+  dt::timestamp::date,
+  'Step3.1' as steps,
+  'MF_users_old' as step_name,
+  b2c,
+  platform,
+  count(distinct client_id)
+   from raw_data3
+   where new_old_users ='Old Users'
+  group by 1,2,3,4,5
+  union all
+  select
+  dt::timestamp::date,
+  'Step3.2' as steps,
+  'MF_users_New' as step_name,
+  b2c,
+  platform,
+  count(distinct client_id)
+   from raw_data3
+   where new_old_users ='New Users'
+  group by 1,2,3,4,5
+  union all
+  select
+  dt::timestamp::date,
+  'Step4' as steps,
+  'Orders_Placed' as step_name,
+  b2c,
+  platform,
+  count(distinct orders)
+   from raw_data3
+   group by 1,2,3,4,5
+   union all
+   select
+   dt::timestamp::date,
+  'Step4.1' as steps,
+  'Orders_Placed_paid' as step_name,
+  b2c,
+  platform,
+  count(distinct orders)
+   from raw_data3
+where first_order = 'TRUE'
+and payment_status = 'SUCCESS'
+group by 1,2,3,4,5
+   union all 
+   select
+  Created_ts::timestamp::date as dt,
+  'Step5' as steps,
+  'Lump_sump' as step_name,
+  b2c,
+  order_source as platform,
+  count(distinct id)
+   from lump_sum_b2b_b2c
+   group by 1,2,3,4,5
