@@ -1,36 +1,63 @@
---insert into table priya.mf_modified_monthly as
-
+--create table priya.mf_modified_monthly as
 with raw_data1 as 
 (
-select distinct client_id as spark_users,'Spark_Android' as platform,date_trunc('month',CAST(dt as date)) as Mt from clickstream.db_dbo_clickstream_data_tablename_dp_spark_clickstream_data where Mt<= date_add('day', -1, current_date) and Mt >= date_trunc('month', date_add('day', -1, current_date))
+select distinct client_id as spark_users,'Spark_Android' as platform,date_trunc('month',CAST(dt as date)) as Mt from clickstream.db_dbo_clickstream_data_tablename_dp_spark_clickstream_data where dt >='2023-01-01'
 union all
-select distinct client_id as spark_users,'Spark_iOS' as platform,date_trunc('month',CAST(dt as date)) as Mt from clickstream.db_dbo_clickstream_data_tablename_spark_ios_clickstream_data where Mt<= date_add('day', -1, current_date) and Mt >= date_trunc('month', date_add('day', -1, current_date))),
+select distinct client_id as spark_users,'Spark_iOS' as platform,date_trunc('month',CAST(dt as date)) as Mt from clickstream.db_dbo_clickstream_data_tablename_spark_ios_clickstream_data where dt >='2023-01-01'),
+
+MF_events as 
+(select *,date_trunc('month',CAST(dt as date)) as Mt from  clickstream.db_dbo_clickstream_data_tablename_mf_clickstream_data where event_id in ('308.0.0.1.0','301.0.0.1.0','305.0.0.1.0','310.0.0.1.5')and dt>='2023-01-01'),
+
 Mf_table as
-(select *,date_trunc('month',CAST(dt as date)) as Mt from  clickstream.db_dbo_clickstream_data_tablename_mf_clickstream_data where Mt<= date_add('day', -1, current_date) and Mt >= date_trunc('month', date_add('day', -1, current_date)) and event_id in ('308.0.0.1.0')),
+(select * from  MF_events  where event_id in ('308.0.0.1.0')),
 join_mf_spark as 
 (select a.mt,a.spark_users,a.platform,b.client_id as MF_users,b.mt as Mf_date from raw_data1 a left join Mf_table b
 on a.spark_users=b.client_id
 and a.mt=b.mt),
 
+fund_details_impressions as 
+(
+select * from  MF_events where event_id in ('301.0.0.1.0')),
+
+views_funds_screen_join as
+(select a.*,b.client_id from join_mf_spark a 
+left join fund_details_impressions b on a.MF_users=b.client_id),
+
+order_pad_impressions as 
+(select * from  MF_events where event_id in ('310.0.0.1.5')),
+
+order_pad_impressions_join as
+(select a.*,b.client_id as oderpad_clients from views_funds_screen_join  a 
+left join order_pad_impressions b on a.client_id=b.client_id),
 
 sn_clientkyc_data as 
 (
-select * from db_online_engine_rev.sn_clientkyc where activefrom::date >='2022-12-01'
-),
+select * from db_online_engine_rev.sn_clientkyc where activefrom::date >='2022-12-01'),
+
 
 mf_spark_b2b_b2c as
 (select a.*,b.b2c from join_mf_spark a left join 
 sn_clientkyc_data b on a.spark_users =b.party_code),
 
+mf_fund_view_b2b_b2c as 
+(select a.*,b.b2c from views_funds_screen_join a left join 
+sn_clientkyc_data b on a.client_id =b.party_code),
+
+mf_order_view_b2b_b2c as 
+(select a.*,b.b2c from order_pad_impressions_join  a left join 
+sn_clientkyc_data b on a.oderpad_clients =b.party_code),
+
+
+
 client_invested as 
-(SELECT distinct client_code as client_id,id as orders,dt as Sip_date, cast(updated_ts as date) updated_date, date_trunc('month',CAST(created_ts as date)) as Mt,platform, status, payment_status,first_order, sip_type, '2.0' version FROM dbo_wms_s3.sips where id>0 and (exchange_sip_id <> '' and exchange_sip_id is not null and status not in ('SIP_REJECTED','SIP_FAILED')) and Mt<= date_add('day', -1, current_date) and Mt >= date_trunc('month', date_add('day', -1, current_date))),
+(SELECT distinct client_code as client_id,id as orders,dt as Sip_date, cast(updated_ts as date) updated_date, date_trunc('month',CAST(created_ts as date)) as Mt,platform, status, payment_status,first_order, sip_type, '2.0' version FROM dbo_wms_s3.sips where id>0 and (exchange_sip_id <> '' and exchange_sip_id is not null and status not in ('SIP_REJECTED','SIP_FAILED')) and created_ts>='2023-01-01'),
 
 
 
 raw_data2 as 
 (
 select a.*,b.activefrom,b.b2c from client_invested a
-left join sn_clientkyc_data b 
+left join db_online_engine_rev.sn_clientkyc b 
 on a.client_id =b.party_code),
 raw_data3 as 
 (
@@ -39,7 +66,7 @@ lump_sum as
 (
  select *,date_trunc('month',CAST(created_ts as date)) as Mt from dbo_wms_s3.orders where
     investment_type='LUMPSUM' and exchange_order_id is not null and exchange_order_id<>'' and status <> 'ORDER_REJECTED'
-    and id >0 and Mt<= date_add('day', -1, current_date) and Mt >= date_trunc('month', date_add('day', -1, current_date))),
+    and id >0 and created_ts>='2023-01-01'),
 
 lump_sum_b2b_b2c as 
 (select a.*,b.b2c from lump_sum a left join sn_clientkyc_data b 
@@ -65,6 +92,26 @@ select
    from mf_spark_b2b_b2c
   group by 1,2,3,4,5
   union all
+select
+  mt,
+  'Step2.1' as steps,
+  'MF_users_fund_view' as step_name,
+  b2c,
+  platform,
+  count(distinct client_id)
+   from mf_fund_view_b2b_b2c
+  group by 1,2,3,4,5
+  union all 
+  select
+  mt,
+  'Step2.2' as steps,
+  'MF_users_orders_view' as step_name,
+  b2c,
+  platform,
+  count(distinct  oderpad_clients)
+   from mf_order_view_b2b_b2c
+  group by 1,2,3,4,5
+union all
   select
 mt,
   'Step3' as steps,
