@@ -1,0 +1,1 @@
+delete from Monthly_master_table where mt <= date_add('day', -1, current_date) and mt >= date_trunc('month', date_add('day', -1, current_date));
