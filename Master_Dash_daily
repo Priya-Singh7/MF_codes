@@ -34,7 +34,7 @@ left join order_pad_impressions b on a.client_id=b.client_id),
 
 sn_clientkyc_data as 
 (
-select * from db_online_engine_rev.sn_clientkyc where activefrom::dt>='2022-01-01'),
+select * from db_online_engine_rev.sn_clientkyc where activefrom::date>='2022-01-01'),
 
 mf_spark_b2b_b2c as
 (select a.*,b.b2c from join_mf_spark a left join 
