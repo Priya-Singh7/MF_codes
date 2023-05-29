@@ -2,12 +2,12 @@
 with raw_data1 as 
 (
 select distinct client_id as spark_users,'Spark_Android' as platform,dt from clickstream.db_dbo_clickstream_data_tablename_dp_spark_clickstream_data where 
-cast(dt as date) >= date_add('day', -1, current_date)
+cast(dt as date) >= date_add('day', -30, current_date)
 union all
-select distinct client_id as spark_users,'Spark_iOS' as platform,dt from clickstream.db_dbo_clickstream_data_tablename_spark_ios_clickstream_data where cast(dt as date) >= date_add('day', -1, current_date)),
+select distinct client_id as spark_users,'Spark_iOS' as platform,dt from clickstream.db_dbo_clickstream_data_tablename_spark_ios_clickstream_data where cast(dt as date) >= date_add('day', -30, current_date)),
 
 MF_events as 
-(select * from  clickstream.db_dbo_clickstream_data_tablename_mf_clickstream_data where cast(dt as date) >= date_add('day', -1, current_date) and event_id in ('308.0.0.1.0','301.0.0.1.0','305.0.0.1.0','310.0.0.1.5')),
+(select * from  clickstream.db_dbo_clickstream_data_tablename_mf_clickstream_data where cast(dt as date) >= date_add('day', -30, current_date) and event_id in ('308.0.0.1.0','301.0.0.1.0','305.0.0.1.0','310.0.0.1.5')),
 
 Mf_table as
 (select * from  MF_events where event_id in ('308.0.0.1.0')),
@@ -34,7 +34,7 @@ left join order_pad_impressions b on a.client_id=b.client_id),
 
 sn_clientkyc_data as 
 (
-select * from db_online_engine_rev.sn_clientkyc),
+select * from db_online_engine_rev.sn_clientkyc where activefrom::date>='2022-01-01'),
 
 mf_spark_b2b_b2c as
 (select a.*,b.b2c from join_mf_spark a left join 
@@ -64,7 +64,7 @@ lump_sum as
 (
  select * from dbo_wms_s3.orders where
     investment_type='LUMPSUM' and exchange_order_id is not null and exchange_order_id<>'' and status <> 'ORDER_REJECTED'
-    and id >0 and cast(created_ts as date) >= date_add('day', -1, current_date)),
+    and id >0 and cast(created_ts as date) >= date_add('day', -30, current_date)),
 lump_sum_b2b_b2c as 
 (select a.*,b.b2c from lump_sum a left join sn_clientkyc_data b 
 on a.client_code =b.party_code)
