@@ -88,26 +88,6 @@ select
   union all
   select
   dt::timestamp::date,
-  'Step2.1' as steps,
-  'MF_users_fund_view' as step_name,
-  b2c,
-  platform,
-  count(distinct client_id)
-   from mf_fund_view_b2b_b2c
-  group by 1,2,3,4,5
-  union all 
-  select
-  dt::timestamp::date,
-  'Step2.2' as steps,
-  'MF_users_orders_view' as step_name,
-  b2c,
-  platform,
-  count(distinct  oderpad_clients)
-   from mf_order_view_b2b_b2c
-  group by 1,2,3,4,5
-  union all
-  select
-  dt::timestamp::date,
   'Step3' as steps,
   'MF_users_invested' as step_name,
   b2c,
