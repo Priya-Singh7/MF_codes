@@ -1,4 +1,5 @@
---create table priya.MF_Master as
+delete from priya.MF_Master where cast(dt as date) >= date_add('day', -30, current_date);
+insert into  table priya.MF_Master as
 with raw_data1 as 
 (select * from 
 priya.spark_users_all  where 
