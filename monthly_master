@@ -1,12 +1,9 @@
 --create table priya.mf_modified_monthly as
 with raw_data1 as 
-(
-select distinct client_id as spark_users,'Spark_Android' as platform,date_trunc('month',CAST(dt as date)) as Mt from clickstream.db_dbo_clickstream_data_tablename_dp_spark_clickstream_data where dt >='2023-01-01'
-union all
-select distinct client_id as spark_users,'Spark_iOS' as platform,date_trunc('month',CAST(dt as date)) as Mt from clickstream.db_dbo_clickstream_data_tablename_spark_ios_clickstream_data where dt >='2023-01-01'),
+(select *,date_trunc('month',CAST(dt as date)) as Mt from priya.spark_users_all and dt>='2023-01-01')
 
 MF_events as 
-(select *,date_trunc('month',CAST(dt as date)) as Mt from  clickstream.db_dbo_clickstream_data_tablename_mf_clickstream_data where event_id in ('308.0.0.1.0','301.0.0.1.0','305.0.0.1.0','310.0.0.1.5')and dt>='2023-01-01'),
+(select *,date_trunc('month',CAST(dt as date)) as Mt from  priya.MF_events_master where event_id in ('308.0.0.1.0','301.0.0.1.0','305.0.0.1.0','310.0.0.1.5')and dt>='2023-01-01'),
 
 Mf_table as
 (select * from  MF_events  where event_id in ('308.0.0.1.0')),
