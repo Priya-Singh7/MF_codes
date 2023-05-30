@@ -2,7 +2,7 @@
 with raw_data1 as 
 (select * from 
 priya.spark_users_all  where 
-cast(dt as date) >= date_add('day', -30, current_date),
+cast(dt as date) >= date_add('day', -30, current_date)),
 
 MF_events as 
 (select * from  priya.MF_events_master where cast(dt as date) >= date_add('day', -30, current_date) and event_id in ('308.0.0.1.0','301.0.0.1.0','305.0.0.1.0','310.0.0.1.5')),
