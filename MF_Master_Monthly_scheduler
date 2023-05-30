@@ -1,4 +1,5 @@
---create table priya.mf_modified_monthly as
+delete from Monthly_master_table where mt <= date_add('day', -1, current_date) and mt >= date_trunc('month', date_add('day', -1, current_date));
+insert into table priya.mf_modified_monthly as
 with raw_data1 as 
 (
 select *,date_trunc('month',CAST(dt as date)) as Mt from priya.spark_users_all where Mt<= date_add('day', -1, current_date) and Mt >= date_trunc('month', date_add('day', -1, current_date))),
