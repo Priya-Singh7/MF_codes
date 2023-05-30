@@ -1,0 +1,5 @@
+create table priya.spark_users_all as 
+select distinct client_id as spark_users,'Spark_Android' as platform,dt from clickstream.db_dbo_clickstream_data_tablename_dp_spark_clickstream_data where 
+dt >= '2023-01-01'
+union all
+select distinct client_id as spark_users,'Spark_iOS' as platform,dt from clickstream.db_dbo_clickstream_data_tablename_spark_ios_clickstream_data where dt >= '2023-01-01'
