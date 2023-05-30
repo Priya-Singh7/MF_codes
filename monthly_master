@@ -1,6 +1,6 @@
 --create table priya.mf_modified_monthly as
 with raw_data1 as 
-(select *,date_trunc('month',CAST(dt as date)) as Mt from priya.spark_users_all and dt>='2023-01-01')
+(select *,date_trunc('month',CAST(dt as date)) as Mt from priya.spark_users_all where dt>='2023-01-01'),
 
 MF_events as 
 (select *,date_trunc('month',CAST(dt as date)) as Mt from  priya.MF_events_master where event_id in ('308.0.0.1.0','301.0.0.1.0','305.0.0.1.0','310.0.0.1.5')and dt>='2023-01-01'),
@@ -89,26 +89,6 @@ select
    from mf_spark_b2b_b2c
   group by 1,2,3,4,5
   union all
-select
-  mt,
-  'Step2.1' as steps,
-  'MF_users_fund_view' as step_name,
-  b2c,
-  platform,
-  count(distinct client_id)
-   from mf_fund_view_b2b_b2c
-  group by 1,2,3,4,5
-  union all 
-  select
-  mt,
-  'Step2.2' as steps,
-  'MF_users_orders_view' as step_name,
-  b2c,
-  platform,
-  count(distinct  oderpad_clients)
-   from mf_order_view_b2b_b2c
-  group by 1,2,3,4,5
-union all
   select
 mt,
   'Step3' as steps,
