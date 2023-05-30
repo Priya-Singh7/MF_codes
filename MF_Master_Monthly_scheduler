@@ -1,12 +1,10 @@
 --create table priya.mf_modified_monthly as
 with raw_data1 as 
 (
-select distinct client_id as spark_users,'Spark_Android' as platform,date_trunc('month',CAST(dt as date)) as Mt from clickstream.db_dbo_clickstream_data_tablename_dp_spark_clickstream_data where Mt<= date_add('day', -1, current_date) and Mt >= date_trunc('month', date_add('day', -1, current_date))
-union all
-select distinct client_id as spark_users,'Spark_iOS' as platform,date_trunc('month',CAST(dt as date)) as Mt from clickstream.db_dbo_clickstream_data_tablename_spark_ios_clickstream_data where Mt<= date_add('day', -1, current_date) and Mt >= date_trunc('month', date_add('day', -1, current_date))),
+select *,date_trunc('month',CAST(dt as date)) as Mt from priya.spark_users_all where Mt<= date_add('day', -1, current_date) and Mt >= date_trunc('month', date_add('day', -1, current_date))),
 
 MF_events as 
-(select *,date_trunc('month',CAST(dt as date)) as Mt from  clickstream.db_dbo_clickstream_data_tablename_mf_clickstream_data where event_id in ('308.0.0.1.0','301.0.0.1.0','305.0.0.1.0','310.0.0.1.5')and Mt<= date_add('day', -1, current_date) and Mt >= date_trunc('month', date_add('day', -1, current_date))),
+(select *,date_trunc('month',CAST(dt as date)) as Mt from  priya.MF_events_master where event_id in ('308.0.0.1.0','301.0.0.1.0','305.0.0.1.0','310.0.0.1.5')and Mt<= date_add('day', -1, current_date) and Mt >= date_trunc('month', date_add('day', -1, current_date))),
 
 Mf_table as
 (select * from  MF_events  where event_id in ('308.0.0.1.0')),
