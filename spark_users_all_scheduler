@@ -1,0 +1,8 @@
+
+delete from priya.spark_users_all  where 
+cast(dt as date) >= date_add('day', -1, current_date);
+insert into priya.spark_users_all  
+select distinct client_id as spark_users,'Spark_Android' as platform,dt from clickstream.db_dbo_clickstream_data_tablename_dp_spark_clickstream_data where 
+cast(dt as date) >= date_add('day', -1, current_date)
+union all
+select distinct client_id as spark_users,'Spark_iOS' as platform,dt from clickstream.db_dbo_clickstream_data_tablename_spark_ios_clickstream_data where cast(dt as date) >= date_add('day', -1, current_date)
