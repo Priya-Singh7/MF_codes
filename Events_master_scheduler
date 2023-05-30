@@ -1,0 +1,5 @@
+delete from priya.MF_events_master where 
+cast(dt as date) >= date_add('day', -1, current_date);
+ 
+select dt,client_id,event_id from  clickstream.db_dbo_clickstream_data_tablename_mf_clickstream_data where 
+cast(dt as date) >= date_add('day', -1, current_date) and event_id in ('308.0.0.1.0','301.0.0.1.0','305.0.0.1.0','310.0.0.1.5')
