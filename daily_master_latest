@@ -13,20 +13,6 @@ join_mf_spark as
 on a.spark_users=b.client_id
 and a.dt=b.dt),
 
-fund_details_impressions as 
-(
-select * from  MF_events where event_id in ('301.0.0.1.0')),
-
-views_funds_screen_join as
-(select a.*,b.client_id from join_mf_spark a 
-left join fund_details_impressions b on a.MF_users=b.client_id),
-
-order_pad_impressions as 
-(select * from  MF_events where event_id in ('310.0.0.1.5')),
-
-order_pad_impressions_join as
-(select a.*,b.client_id as oderpad_clients from views_funds_screen_join  a 
-left join order_pad_impressions b on a.client_id=b.client_id),
 
 
 sn_clientkyc_data as 
@@ -36,14 +22,6 @@ select * from db_online_engine_rev.sn_clientkyc where activefrom::date>='2022-12
 mf_spark_b2b_b2c as
 (select a.*,b.b2c from join_mf_spark a left join 
 sn_clientkyc_data b on a.spark_users =b.party_code),
-
-mf_fund_view_b2b_b2c as 
-(select a.*,b.b2c from views_funds_screen_join a left join 
-sn_clientkyc_data b on a.client_id =b.party_code),
-
-mf_order_view_b2b_b2c as 
-(select a.*,b.b2c from order_pad_impressions_join  a left join 
-sn_clientkyc_data b on a.oderpad_clients =b.party_code),
 
 
 client_invested as 
@@ -94,6 +72,7 @@ select
   platform,
   count(distinct client_id)
    from raw_data3
+  where payment_status = 'SUCCESS'
   group by 1,2,3,4,5
   union all
   select
@@ -105,6 +84,7 @@ select
   count(distinct client_id)
    from raw_data3
    where new_old_users ='Old Users'
+ and payment_status = 'SUCCESS'
   group by 1,2,3,4,5
   union all
   select
@@ -116,6 +96,7 @@ select
   count(distinct client_id)
    from raw_data3
    where new_old_users ='New Users'
+    and payment_status = 'SUCCESS'
   group by 1,2,3,4,5
   union all
   select
