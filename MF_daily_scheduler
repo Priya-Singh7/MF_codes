@@ -95,6 +95,7 @@ select
   platform,
   count(distinct client_id)
    from raw_data3
+  where payment_status = 'SUCCESS'
   group by 1,2,3,4,5
   union all
   select
@@ -106,6 +107,7 @@ select
   count(distinct client_id)
    from raw_data3
    where new_old_users ='Old Users'
+   and payment_status = 'SUCCESS'
   group by 1,2,3,4,5
   union all
   select
@@ -117,6 +119,7 @@ select
   count(distinct client_id)
    from raw_data3
    where new_old_users ='New Users'
+   and payment_status = 'SUCCESS'
   group by 1,2,3,4,5
   union all
   select
