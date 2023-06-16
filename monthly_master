@@ -15,7 +15,7 @@ and a.mt=b.mt),
 
 sn_clientkyc_data as 
 (
-select * from db_online_engine_rev.sn_clientkyc where activefrom::date >='2022-12-01'),
+select * from "dbo-angels"."product_analytics"."sn_clientkyc" where activefrom::date >='2022-12-01'),
 
 
 mf_spark_b2b_b2c as
