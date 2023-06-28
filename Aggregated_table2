@@ -1,0 +1,28 @@
+create table  priya.Aggregated_SIP_Cancellation as
+with client_invested as 
+
+(SELECT distinct client_code as client_id,(id)as orders,dt as Sip_date, updated_ts as updated_date, created_ts, status, payment_status, sip_type, '2.0' version FROM dbo_wms_s3.sips  where created_ts::timestamp::date>='2023-01-01' and (exchange_sip_id <> '' and exchange_sip_id is not null and status not in ('SIP_REJECTED','SIP_FAILED'))),
+
+
+clients_all as
+(select * from (select rank() over (partition by client_id order by created_ts asc) as rank ,* from client_invested)),
+
+SIP_cancelled as 
+(
+select * from client_invested where status='SIP_CANCELLED'
+)
+select distinct a.client_id,a.orders as first_order,a.created_ts as first_order_date,
+c.orders as cancelled_orders,c.updated_date as cancelled_date,
+datediff (day,first_order_date,cancelled_date) as firsr_cancelled_order_day,
+case when firsr_cancelled_order_day<=5 then '<=5 days'
+ when firsr_cancelled_order_day>5 and firsr_cancelled_order_day<=15  then '5-15 days'
+ when firsr_cancelled_order_day>15 and firsr_cancelled_order_day<=30  then '15-30 days'
+ when firsr_cancelled_order_day>30 and firsr_cancelled_order_day<=60  then '30-60 days'
+  when firsr_cancelled_order_day>60 and firsr_cancelled_order_day<=90  then '60-90 days'
+  when firsr_cancelled_order_day> 90 then '>90 days'
+  when firsr_cancelled_order_day is null then null
+end as First_cancelled_order_conversion
+from clients_all a
+left join SIP_cancelled c
+on a.client_id=c.client_id
+and a.orders=c.orders
