@@ -1,0 +1,48 @@
+insert into table priya.MF_Aggregated_First_SIP as
+with client_invested as 
+
+(SELECT distinct client_code as client_id,(id)as orders,dt as Sip_date, updated_ts as updated_date, created_ts, status, payment_status, sip_type, '2.0' version FROM dbo_wms_s3.sips  where cast(updated_date as date) >= date_add('day', -60, current_date) and (exchange_sip_id <> '' and exchange_sip_id is not null and status not in ('SIP_REJECTED','SIP_FAILED'))),
+
+clients_all as
+(select * from (select rank() over (partition by client_id order by created_ts asc) as rank ,* from client_invested)),
+
+final as 
+(
+select distinct a.client_id, b.orders as first_order,b.created_ts as first_order_date,
+c.orders as second_order,c.created_ts as second_order_date,max(a.updated_date) as last_sip_order_date,
+datediff (day,first_order_date,second_order_date) as TAT_first_second_order_day,
+case when TAT_first_second_order_day=0 then 'same day 2nd order'
+when TAT_first_second_order_day<=5 and TAT_first_second_order_day>0  then '<=5 days'
+ when TAT_first_second_order_day>5 and TAT_first_second_order_day<=15  then '5-15 days'
+ when TAT_first_second_order_day>15 and TAT_first_second_order_day<=30  then '15-30 days'
+ when TAT_first_second_order_day>30 and TAT_first_second_order_day<=60  then '30-60 days'
+  when TAT_first_second_order_day>60 and TAT_first_second_order_day<=90  then '60-90 days'
+  when TAT_first_second_order_day> 90 then '>90 days'
+  when TAT_first_second_order_day is null then null
+end as First_second_order_conversion
+from clients_all a
+left join (select client_id,orders,rank,created_ts from clients_all where rank=1) b
+on a.client_id=b.client_id
+left join (select client_id,orders,rank,created_ts from clients_all where rank=2) c
+on a.client_id=c.client_id
+group by 1,2,3,4,5
+),
+
+sn_kyc as 
+(
+select a.*,b.activefrom as UCC_Activation_date,b.Firsttrade as first_Trade_Equity from final a
+left join "dbo-angels"."product_analytics"."sn_clientkyc" b 
+on a.client_id =b.party_code)
+
+
+
+select *,datediff (day,UCC_Activation_date::timestamp::date,first_order_date::timestamp::date) as UCC_First_SIP_days,
+case when UCC_First_SIP_days<=5 then '<=5 days'
+ when UCC_First_SIP_days>5 and UCC_First_SIP_days<=15  then '5-15 days'
+ when UCC_First_SIP_days>15 and UCC_First_SIP_days<=30  then '15-30 days'
+ when UCC_First_SIP_days>30 and UCC_First_SIP_days<=60  then '30-60 days'
+  when UCC_First_SIP_days>60 and UCC_First_SIP_days<=90  then '60-90 days'
+  when UCC_First_SIP_days> 90 then '>90 days'
+  when UCC_First_SIP_days is null then null
+end as UCC_First_SIP_Conversion
+from sn_kyc
