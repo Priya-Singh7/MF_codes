@@ -1,0 +1,42 @@
+create table priya.import_funds_Master as
+with client_sip_data as
+(
+select 
+client_code, min(created_ts) as first_sip_ts 
+FROM dbo_wms_s3.sips
+where 
+exchange_sip_id <> '' and exchange_sip_id is not null and status not in ('SIP_REJECTED','SIP_FAILED') and id>0 
+group by 1
+),
+sn_kyc as 
+(SELECT distinct party_code,case when b2c='Y' then 'B2C' when b2c='N' then 'B2B' else null end as Client_type,datediff(year,cast(birthdate as date),current_date) as Age  FROM "dbo-angels"."product_analytics"."sn_clientkyc" 
+)
+
+select * from
+(
+select 
+case when event_id = '313.0.0.0.3' then '1_Click_ALL'
+when event_id in ('313.0.0.0.16') then '2_Track_external_events'
+when event_id = '313.0.0.0.20'  then '3_generate_otp'
+when event_id ='313.0.0.0.22' then '4_verify_otp'
+else NULL end as stepname,
+case when Client_type='B2B' then 'B2B'
+when Client_type='B2C' then 'B2C'
+else null end as client_type,
+case when age between 18 and 25 then '18-25'
+when age between 26 and 30 then '26-30'
+when age between 31 and 35 then '31-35'
+when age between 36 and 40 then '36-40'
+when age between 41 and 45 then '41-45'
+when age between 46 and 50 then '46-50'
+when age <18 then 'less than 18'
+else '50+' end as Age_bucket,
+api_timestamp::timestamp::date as visit_date,
+platform,
+count(distinct a.client_id) as client_code
+from clickstream.db_dbo_clickstream_data_tablename_mf_clickstream_data a
+left join sn_kyc b 
+on a.client_id =b.party_code
+where event_id in ('313.0.0.0.3','313.0.0.0.16', '313.0.0.0.20', '313.0.0.0.22')
+and dt>='2023-04-01' 
+group by 1,2,3,4,5) where stepname is not null
