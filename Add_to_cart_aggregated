@@ -1,0 +1,30 @@
+create table priya.Add_cart_aggregated as
+with raw_data1 as 
+(select * from priya.Master_Add_to_Cart where stepname='4_Add_to_cart_successfully'),
+
+raw_data2 as 
+(
+select a.visit_date,a.client_code,a.client_type,a.platform,a.age_bucket,b.payment_status,b.payment_mode,c.investment_type from raw_data1 a
+join dbo_wms_s3.cart_item_orders b on a.client_code=b.client_code
+join  dbo_wms_s3.cart_items c on a.client_code=c.client_code)
+
+
+select count(distinct client_code) as clients,visit_date,client_type,platform,age_bucket,'','','','1_Add_to_cart_impression' as step_name,'Step1' as steps from priya.Master_Add_to_Cart
+where stepname='1_Add_to_cart_impression'
+group by 2,3,4,5,6,7,8
+union all
+select count(distinct client_code) as clients,visit_date,client_type,platform,age_bucket,'','','','2_Proceed_to checkout' as step_name,'Step2' as steps from priya.Master_Add_to_Cart
+where stepname='2_Proceed_to checkout'
+group by 2,3,4,5,6,7,8
+union all 
+select count(distinct client_code)as clients,visit_date,client_type,platform,age_bucket,'','','','3_Add_to_cart_pay_now' as step_name,'Step3' as steps from priya.Master_Add_to_Cart
+where stepname='3_Add_to_cart_pay_now'
+group by 2,3,4,5,6,7,8
+union all 
+select count(distinct client_code)as clients,visit_date,client_type,platform,age_bucket,'','','','4_Add_to_cart_successfully' as step_name,'Step4' as steps from priya.Master_Add_to_Cart
+where stepname='4_Add_to_cart_successfully'
+group by 2,3,4,5,6,7,8
+union all
+select count(distinct client_code)as clients,visit_date,client_type,platform,age_bucket,payment_status,payment_mode,investment_type,'5_Add_to_cart_MF_created' as step_name,'Step5' as steps from raw_data2
+where payment_status='success'
+group by 2,3,4,5,6,7,8
