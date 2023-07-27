@@ -1,0 +1,54 @@
+create table priya.MF_Homepage_orders as
+with raw_data1 as 
+ (
+ select distinct date_trunc('month',CAST(dt as date)) as Mt, client_id, case when event_id in ('308.0.0.1.0') then 1 else 0 end as MF_Homepage, 
+ case when event_id in('301.0.0.1.0') then 1 else 0 end as Fund_screen,
+ case when event_id in('310.0.0.1.5')  then 1 else 0 end as order_screen from priya.MF_events_master
+ where dt>='2023-01-01'),
+
+raw_data2 as 
+(
+ select distinct client_id as home_pageclients ,Mt from raw_data1 
+ where MF_Homepage=1
+),
+raw_dat3 as 
+(select distinct client_id as funds_clients ,Mt  from raw_data1 
+ where Fund_screen=1),
+
+raw_data4 as 
+(select distinct client_id as order_clients ,Mt from raw_data1 
+ where order_screen=1),
+
+join1 as
+(
+select distinct b.funds_clients as step2,a.home_pageclients,b.Mt
+from raw_data2 a left join raw_dat3 b on a.home_pageclients=b.funds_clients
+),
+join2 as 
+(
+select distinct a.step2 as step2,b.order_clients as step3,b.Mt
+from join1 a left join raw_data4 b on a.step2=b.order_clients)
+
+select
+  Mt,
+  'Step1' as steps,
+  'Clients_Home_Page' as step_name,
+  count(distinct home_pageclients)
+  from raw_data2
+group by 1
+union all 
+select
+  Mt,
+  'Step2' as steps,
+  'Clients_Funds_Page' as step_name,
+  count(distinct step2)
+  from join1 
+group by 1
+union all 
+select
+  Mt,
+  'Step3' as steps,
+  'Clients_Order_Page' as step_name,
+  count(distinct step3)
+  from join2 
+group by 1
