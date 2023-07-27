@@ -1,0 +1,51 @@
+with raw_data1 as
+(
+select * from dbo_wms_s3.orders where
+exchange_order_id is not null and exchange_order_id<>'' and status <> 'ORDER_REJECTED' and payemt_status='success'),
+
+raw_data2 as 
+(
+SELECT distinct client_code as client_id,id as orders,dt as Sip_date, cast(updated_ts as date) updated_date, cast(created_ts as date) dt, status,platform, payment_status, first_order,sip_type, '2.0' version FROM dbo_wms_s3.sips where (exchange_sip_id <> '' and exchange_sip_id is not null and status not in ('SIP_REJECTED','SIP_FAILED'))),
+
+
+client_ALL as 
+(
+SELECT DISTINCT
+client_code as clients, created_ts::date,
+MIN(created_ts::date) OVER (PARTITION BY client_code) AS first_purchase,investment_type as type
+from raw_data1
+union all 
+SELECT DISTINCT
+client_id as clients, dt,
+MIN(dt) OVER (PARTITION BY client_id) AS first_purchase,SIP_type as type from raw_data2
+),
+MF_data as 
+(
+select distinct clients,MIN(first_purchase) OVER (PARTITION BY clients) AS first_purchase_MF from client_ALL),
+
+orders_data as
+(
+SELECT * FROM dbo_order.first_trade),
+
+final_new as 
+(
+select distinct a.clients as mf_clients ,a.first_purchase_MF,b.first_trade as first_trade_equity
+from MF_data a left join orders_data b
+on a.clients=b.party_code
+),
+
+first_mf as 
+(
+select *,
+case when first_purchase_mf::date <=first_trade_equity::date then first_purchase_mf::date else null
+end as first_trade_mf
+from final_new
+where first_purchase_mf::date >='2023-01-01'
+and first_trade_mf is not null
+)
+select count(distinct a.mf_clients),avg(b.netbrokrev), sum(b.netbrokrev),
+cast(date_trunc('month',CAST(a.first_purchase_mf as date))as date) as Mt from first_mf a 
+join "dbo-angels"."sb_master_tables"."dbo_ispc_master_scard_partyinfobrokmonthwise" b 
+on a.mf_clients=b.clientcode
+and cast(date_trunc('month',CAST(a.first_purchase_mf as date))as date) =cast(startofmonth as date)
+group by 4
