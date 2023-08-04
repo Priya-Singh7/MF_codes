@@ -3,3 +3,8 @@ select count(distinct client_id) as users,dt,SPLIT_PART(SPLIT_PART(event_metadat
 from clickstream.db_dbo_clickstream_data_tablename_mf_clickstream_data 
 where event_id='315.0.0.0.3' and dt>='2023-05-01'
 group by 2,3,4
+union all 
+select count(*) as users,dt,JSON_EXTRACT_PATH_TEXT(event_metadata, 'source') as no_funds_proceed_to_checkout ,platform,'2_source' as step_name,'Step2' as steps 
+from clickstream.db_dbo_clickstream_data_tablename_mf_clickstream_data 
+where event_id='315.0.0.8.0' and dt>='2023-05-01'
+group by 2,3,4
