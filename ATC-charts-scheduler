@@ -1,0 +1,15 @@
+delete from priya.add_to_cart_charts where 
+cast(Visit_date as date) >= date_add('day', -60, current_date);
+
+
+insert into priya.add_to_cart_charts as
+ 
+select count(distinct client_id) as users,dt,SPLIT_PART(SPLIT_PART(event_metadata, ',', 1),':',2) as no_funds_proceed_to_checkout ,platform,'1_No_funds' as step_name,'Step1' as steps 
+from clickstream.db_dbo_clickstream_data_tablename_mf_clickstream_data 
+where event_id='315.0.0.0.3' and cast(dt as date) >= date_add('day', -60, current_date)
+group by 2,3,4
+union all 
+select count(*) as users,dt,JSON_EXTRACT_PATH_TEXT(event_metadata, 'source') as no_funds_proceed_to_checkout ,platform,'2_source' as step_name,'Step2' as steps 
+from clickstream.db_dbo_clickstream_data_tablename_mf_clickstream_data 
+where event_id='315.0.0.8.0' and cast(dt as date) >= date_add('day', -60, current_date)
+group by 2,3,4
