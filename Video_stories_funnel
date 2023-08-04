@@ -1,0 +1,39 @@
+--create table priya.Video_stories_Funnel as
+
+with raw_data1 as 
+(
+select distinct client_id as clients,dt,  'Step1' as steps, 'Story_click' as step_name from clickstream.db_dbo_clickstream_data_tablename_mf_clickstream_data  where   event_id in ('308.0.0.6.4') and dt >='2023-05-01'
+union all
+select  distinct client_id as clients,dt, 'Step2' as steps, 'Story_impressions'as step_name from  clickstream.db_dbo_clickstream_data_tablename_mf_clickstream_data where   event_id in ('308.0.0.6.5') and client_id in (select  distinct client_id from clickstream.db_dbo_clickstream_data_tablename_mf_clickstream_data  where   event_id in ('308.0.0.6.4') and dt >='2023-05-01') and dt >='2023-05-01'
+union all
+select distinct client_id as clients, dt, 'Step3' as steps, 'Story_invest' as step_name  from clickstream.db_dbo_clickstream_data_tablename_mf_clickstream_data where event_id in ('308.0.0.6.8') and client_id in(select distinct client_id as clients from clickstream.db_dbo_clickstream_data_tablename_mf_clickstream_data where   event_id in ('308.0.0.6.4') and client_id in(select  distinct client_id from clickstream.db_dbo_clickstream_data_tablename_mf_clickstream_data  where event_id in ('308.0.0.6.5') and dt >='2023-05-01') and dt >='2023-05-01') and client_id is not null and dt >='2023-05-01'),
+client_invest as 
+
+(SELECT distinct client_code as client_id,id as orders,dt as Sip_date, cast(updated_ts as date) updated_date,CAST(created_ts as date) as dt,platform, created_ts,status, payment_status,first_order, sip_type, '2.0' version,installment_amount FROM dbo_wms_s3.sips where  (exchange_sip_id <> '' and exchange_sip_id is not null and status not in ('SIP_REJECTED','SIP_FAILED')) and created_ts>='2023-05-01'),
+
+clients_invested_final as 
+(
+select distinct b.client_id,b.dt from raw_data1 a
+left join client_invest b on a.clients=b.client_id
+and a.dt=b.dt
+where a.steps='Step3'),
+
+
+raw_data3 as 
+(
+select  count(distinct clients) as clients,CAST(dt as date) as dt,'Step1' as steps, 'story_clicks_clients' as step_name  from raw_data1
+where steps='Step1'
+group by 2
+union all
+select  count(distinct clients) as clients,CAST(dt as date) as dt,'Step2' as steps, 'story_impressions_unique_users' as step_name  from raw_data1
+where steps='Step2'
+group by 2
+union all
+select  count(distinct clients) as clients,CAST(dt as date) as dt,'Step3' as steps, 'story_invest' as step_name  from raw_data1
+where steps='Step3'
+group by 2
+union all 
+select  count(distinct client_id) as clients,CAST(dt as date) as dt,'Step4' as steps, 'client_invested_final' as step_name  from clients_invested_final
+group by 2)
+
+select * from raw_data3 where dt >='2023-05-01'
