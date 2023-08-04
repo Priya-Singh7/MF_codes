@@ -1,6 +1,6 @@
 
 delete from priya.import_funds_Master  where 
-cast(Visit_date as date) >= date_add('day', -60, current_date); 
+cast(Visit_date as date) >= date_add('day', -60, current_date);
 
 
 insert into table priya.import_funds_Master as
