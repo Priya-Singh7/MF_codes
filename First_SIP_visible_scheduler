@@ -1,4 +1,6 @@
-create table priya.First_SIPS_Visible as
+delete from priya.First_SIPS_Visible  where 
+cast(dt as date) >= date_add('day', -30, current_date);
+insert into priya.First_SIPS_Visible 
 with client_sip_data as
 (
 select 
