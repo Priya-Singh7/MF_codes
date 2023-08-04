@@ -43,9 +43,3 @@ and cast(dt as date) >= '2023-05-01'
 group by 1,2,3,4,5,6) where stepname is not null
 
 
--- select count(distinct client_id) as users,SPLIT_PART(SPLIT_PART(event_metadata, ',', 1),':',2) as no_funds,JSON_extract_path_text(event_metadata, 'TotalAmount') AS total_amount
--- from clickstream_internal.mf_clickstream_data where event_id='315.0.0.7.0'
--- group by 2,3
-
--- select * from clickstream_internal.mf_clickstream_data where event_id='315.0.0.0.3'
--- and client_id='C124647'
