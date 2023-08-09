@@ -1,5 +1,5 @@
 delete from priya.First_SIPS_Visible  where 
-cast(dt as date) >= date_add('day', -30, current_date);
+cast(dt as date) >= date_add('day', -1, current_date);
 insert into priya.First_SIPS_Visible 
 with client_sip_data as
 (
@@ -52,5 +52,5 @@ where event_id in ('308.0.0.1.0',
 '308.0.0.6.28',
 '308.0.0.6.30',
 '308.0.0.6.36')
-cast(dt as date) >= date_add('day', -30, current_date);
+cast(dt as date) >= date_add('day', -1, current_date);
 group by 1,2,3,4,5) where stepname is not null
