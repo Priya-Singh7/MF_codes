@@ -1,5 +1,5 @@
 delete from priya.mf_modified  where cast(dt as date) >= date_add('day', -30, current_date);
-insert into  table priya.mf_modified
+insert into  priya.mf_modified
 with raw_data1 as 
 (select * from 
 priya.spark_users_all  where 
