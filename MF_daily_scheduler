@@ -49,7 +49,7 @@ sn_clientkyc_data b on a.oderpad_clients =b.party_code),
 
 
 client_invested as 
-(SELECT distinct client_code as client_id,id as orders,dt as Sip_date, cast(updated_ts as date) updated_date, cast(created_ts as date) dt, status,platform, payment_status, first_order,sip_type, '2.0' version FROM dbo_wms_s3.sips where id>0 and (exchange_sip_id <> '' and exchange_sip_id is not null and cast(created_ts as date) >= date_add('day', -1, current_date) and status not in ('SIP_REJECTED','SIP_FAILED'))),
+(SELECT distinct client_code as client_id,id as orders,dt as Sip_date, cast(updated_ts as date) updated_date, cast(created_ts as date) dt, status,platform, payment_status, first_order,sip_type, '2.0' version FROM dbo_wms_s3.sips where id>0 and (exchange_sip_id <> '' and exchange_sip_id is not null and cast(created_ts as date) >= date_add('day', -30, current_date) and status not in ('SIP_REJECTED','SIP_FAILED'))),
 
 raw_data2 as 
 (
