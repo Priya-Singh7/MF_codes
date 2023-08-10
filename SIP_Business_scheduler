@@ -1,0 +1,70 @@
+
+delete from priya.SIP_business where mt <= date_add('day', -1, current_date) and mt >= date_trunc('month', date_add('day', -1, current_date));
+
+insert into priya.SIP_business
+
+select * from priya.SIP_business
+
+with client_invested_SIP as
+
+(SELECT distinct client_code as client_id,id as orders,dt as Sip_date, cast(updated_ts as date) updated_date, date_trunc('month',CAST(created_ts as date)) as Mt,cast(created_ts as date) as dt,platform, status, payment_status, sip_type, installment_amount,mandate_id,payment_mode FROM "dbo-angels"."dbo_wms"."sips"  where(exchange_sip_id <> '' and exchange_sip_id is not null and status not in ('SIP_REJECTED','SIP_FAILED')) and created_ts::timestamp::date>='2023-01-01'
+),
+
+
+lump_sum as 
+(
+ select *,date_trunc('month',CAST(created_ts as date)) as Mt from "dbo-angels"."dbo_wms"."orders" where
+ exchange_order_id is not null and exchange_order_id<>'' and status <> 'ORDER_REJECTED' and created_ts::timestamp::date>='2023-01-01'),
+
+Home_page as
+( 
+select date_trunc('month',CAST(dt as date)) as Mt, client_id,platform from  "dbo-angels"."dbo_wms"."mf_events_master" where event_id in ('308.0.0.1.0')and dt>='2023-01-01'),
+
+sn_kyc as 
+(select activefrom,state,gender,party_code,b2c  from "dbo-angels"."product_analytics"."sn_clientkyc"  where activefrom::date >='2022-01-01'),
+
+raw_data2 as 
+(
+select a.*,b.activefrom,b.state,b.gender,b.b2c from client_invested_SIP a
+left join sn_kyc b 
+on a.client_id =b.party_code
+),
+
+Home_page_users as 
+(select a.*,b.activefrom,b.state,b.gender,b.b2c from Home_page a
+left join sn_kyc b 
+on a.client_id =b.party_code),
+
+
+
+
+spark_users as 
+(
+select *,date_trunc('month',CAST(dt as date)) as Mt from "dbo-angels"."dbo_wms"."spark_users_all" where dt>='2023-01-01'
+),
+
+spark_users_kyc as 
+(select a.*,b.activefrom,b.state,b.gender,b.b2c from spark_users a
+left join sn_kyc b 
+on a.spark_users =b.party_code),
+final as 
+(
+select mt,state,gender,'',b2c,count(distinct spark_users) as clients,  'Step0' as steps, 'Spark_Users' as step_name from spark_users_kyc
+group by 1,2,3,4,5
+union all
+select mt,state,gender,'',b2c,count(distinct client_id) as clients,  'Step1' as steps, 'MF_Home_page_visitors' as step_name from Home_page_users
+group by 1,2,3,4,5
+union all
+select mt,state,gender,payment_mode,b2c,count(orders) as clients, 'Step2' as steps, 'SIPS_till_date' as step_name from raw_data2 where status not in ('SIP_CANCELLED')
+group by 1,2,3,4,5
+union all
+select mt,state,gender,payment_mode,b2c,count(distinct client_id) as clients,  'Step3' as steps, 'Paid_sips' as step_name from raw_data2 where payment_status='SUCCESS'
+group by 1,2,3,4,5
+union all
+select mt,state,gender,payment_mode,b2c,count(distinct client_id) as clients,  'Step4' as steps, 'users_amount_greater_15k' as step_name from raw_data2 where payment_status='SUCCESS' and installment_amount>=15000
+group by 1,2,3,4,5
+union all
+select mt,state,gender,payment_mode,b2c,sum(installment_amount) as Total_Amount, 'Step5' as steps, 'Total_Amount' as step_name from raw_data2 where status not in ('SIP_CANCELLED')
+group by 1,2,3,4,5
+)
+select * from final where mt <= date_add('day', -1, current_date) and mt >= date_trunc('month', date_add('day', -1, current_date))
