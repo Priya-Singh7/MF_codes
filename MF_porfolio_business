@@ -1,0 +1,8 @@
+create table priya.portfolio_business as
+with Portfolio_table as
+(select * from dbo_wms_s3.portfolio where invested_value>0 and dt>='2023-01-01')
+
+select count(distinct client_code) as clients, 'Step1' as steps, 'Total_clients' as step_name  from Portfolio_table
+union all
+select count(distinct client_code) as clients, 'Step2' as steps, 'Total_clients>15k' as step_name from Portfolio_table
+where invested_value>15000
