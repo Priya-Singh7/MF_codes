@@ -1,4 +1,4 @@
-delete from Monthly_master_table where mt <= date_add('day', -1, current_date) and mt >= date_trunc('month', date_add('day', -1, current_date));
+delete from priya.mf_modified_monthly where mt <= date_add('day', -1, current_date) and mt >= date_trunc('month', date_add('day', -1, current_date));
 insert into table priya.mf_modified_monthly as
 with raw_data1 as 
 (
