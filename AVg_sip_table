@@ -1,0 +1,11 @@
+
+create table priya.Avg_SIP as
+with client_invested_SIP as
+
+(SELECT distinct client_code as client_id,id as orders,dt as Sip_date, cast(updated_ts as date) updated_date, date_trunc('month',CAST(created_ts as date)) as Mt,cast(created_ts as date) as dt,platform, status, payment_status, sip_type, installment_amount,mandate_id,payment_mode,first_order FROM dbo_wms_s3.sips  where(exchange_sip_id <> '' and exchange_sip_id is not null and status not in ('SIP_REJECTED','SIP_FAILED')) and created_ts::timestamp::date>='2023-01-01')
+
+
+select sum(installment_amount)/count(orders) as avg ,count(distinct client_id),mt from 
+client_invested_SIP
+ group by 3
+
