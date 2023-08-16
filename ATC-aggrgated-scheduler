@@ -1,6 +1,6 @@
 -
 delete from priya.Add_cart_aggregated  where 
-cast(Visit_date as date) >= date_add('day', -60, current_date);
+cast(Visit_date as date) >= date_add('day', -2, current_date);
 
 
 insert into table priya.Add_cart_aggregated as
@@ -35,4 +35,4 @@ select count(distinct client_code)as clients,visit_date,client_type,platform,age
 where payment_status='success'
 group by 2,3,4,5,6,7,8)
 
-select * from raw_data3 where cast(visit_date  as date) >= date_add('day', -60, current_date)
+select * from raw_data3 where cast(visit_date  as date) >= date_add('day', -2, current_date)
