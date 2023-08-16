@@ -44,5 +44,5 @@ from clickstream.db_dbo_clickstream_data_tablename_mf_clickstream_data a
 left join sn_kyc b 
 on a.client_id =b.party_code
 where event_id in ('315.0.0.0.1','315.0.0.0.3', '315.0.0.3.1', '315.0.0.7.0')
-and cast(dt as date) >= date_add('day', -60, current_date)
+and cast(dt as date) >= date_add('day', -2, current_date)
 group by 1,2,3,4,5,6) where stepname is not null
