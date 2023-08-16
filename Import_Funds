@@ -37,6 +37,6 @@ count(distinct a.client_id) as client_code
 from clickstream.db_dbo_clickstream_data_tablename_mf_clickstream_data a
 left join sn_kyc b 
 on a.client_id =b.party_code
-where event_id in ('313.0.0.0.3','313.0.0.0.16', '313.0.0.0.20', '313.0.0.0.22')
+where event_id in ('313.0.0.0.3','313.0.0.0.16', '313.0.0.0.20', '313.0.0.0.22','308.0.0.6.11')
 and dt>='2023-04-01' 
 group by 1,2,3,4,5) where stepname is not null
