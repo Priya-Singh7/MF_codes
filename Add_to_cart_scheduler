@@ -1,5 +1,5 @@
 delete from  priya.Master_Add_to_Cart  where 
-cast(dt as date) >= date_add('day', -60, current_date);
+cast(dt as date) >= date_add('day', -2, current_date);
 
 
 insert into table priya.Master_Add_to_Cart as
@@ -8,7 +8,7 @@ with client_sip_data as
 (
 select 
 client_code, min(created_ts) as first_sip_ts 
-FROM dbo_wms_s3.sips
+FROM dbo_wms.sips
 where 
 exchange_sip_id <> '' and exchange_sip_id is not null and status not in ('SIP_REJECTED','SIP_FAILED') and id>0 
 group by 1
