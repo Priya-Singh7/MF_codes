@@ -16,7 +16,7 @@ select * from
 (
 select 
 case when event_id = '313.0.0.0.3' then '1_Click_ALL'
-when event_id in ('313.0.0.0.16') then '2_Track_external_events'
+when event_id in ('313.0.0.0.16','308.0.0.6.11') then '2_Track_external_events'
 when event_id = '313.0.0.0.20'  then '3_generate_otp'
 when event_id ='313.0.0.0.22' then '4_verify_otp'
 else NULL end as stepname,
