@@ -1,5 +1,5 @@
 
-delete from "dbo-angels"."dbo_wms"."dbo_wms.SIP_business" where mt <= date_add('day', -1, current_date) and mt >= date_trunc('month', date_add('day', -1, current_date));
+delete from "dbo-angels"."dbo_wms"..SIP_business" where mt <= date_add('day', -1, current_date) and mt >= date_trunc('month', date_add('day', -1, current_date));
 
 insert into "dbo-angels"."dbo_wms"."SIP_business"
 
